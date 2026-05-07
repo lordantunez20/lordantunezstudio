@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LORDANTUNEZ Studio — Diseño Gráfico & Branding Premium</title>
+    <meta name="description" content="Agencia creativa de diseño gráfico, branding y experiencias visuales de alto impacto.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            black: '#0a0a0a',
+                            dark: '#111111',
+                            gray: '#1a1a1a',
+                            light: '#f5f5f5',
+                            cyan: '#00f0ff',
+                            magenta: '#ff00a0',
+                            yellow: '#ffe600',
+                            white: '#ffffff',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-outline" id="cursorOutline"></div>
+
+    <div class="toast" id="toast"><i class="fas fa-check-circle text-brand-cyan"></i><span id="toastMsg">Guardado correctamente</span></div>
+
+    <div class="admin-login-overlay" id="adminLoginOverlay">
+        <div class="w-full max-w-md px-6">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-cyan to-brand-magenta flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-brand-black text-2xl"></i>
+                </div>
+                <h2 class="font-display font-bold text-2xl mb-2">Panel de Administración</h2>
+                <p class="text-white/50 text-sm">Ingresa con el usuario administrador de Supabase</p>
+            </div>
+            <form id="adminLoginForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Email</label>
+                    <input type="email" id="adminUser" class="admin-input" placeholder="admin@tudominio.com" autocomplete="username">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Contraseña</label>
+                    <input type="password" id="adminPass" class="admin-input" placeholder="••••" autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary w-full justify-center mt-2">
+                    <span>Ingresar</span><i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="button" onclick="closeAdminLogin()" class="btn-outline w-full justify-center text-xs py-3">
+                    <span>Volver al sitio</span>
+                </button>
+            </form>
+            <p id="loginError" class="text-red-400 text-sm text-center mt-4 hidden">No se pudo iniciar sesión. Revisa tus credenciales de Supabase.</p>
+        </div>
+    </div>
+
+    <div class="admin-panel-overlay" id="adminPanelOverlay">
+        <div class="border-b border-white/5 bg-brand-black/80 backdrop-blur-xl sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-magenta flex items-center justify-center">
+                        <span class="font-display font-bold text-brand-black text-lg">L</span>
+                    </div>
+                    <div>
+                        <div class="font-display font-bold">Admin Panel</div>
+                        <div class="text-white/40 text-xs flex items-center gap-2">
+                            <span class="db-status-indicator"></span>
+                            <span id="databaseStatus">Supabase</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="hidden sm:inline text-white/40 text-sm"><i class="fas fa-user-shield text-brand-cyan mr-2"></i>Admin</span>
+                    <button onclick="exportDatabase()" class="btn-secondary text-xs py-2 px-4" title="Exportar DB">
+                        <i class="fas fa-download"></i><span class="hidden sm:inline">Exportar</span>
+                    </button>
+                    <button onclick="document.getElementById('dbImportFile').click()" class="btn-secondary text-xs py-2 px-4" title="Importar DB">
+                        <i class="fas fa-upload"></i><span class="hidden sm:inline">Importar</span>
+                    </button>
+                    <input type="file" id="dbImportFile" class="hidden" accept=".json" onchange="importDatabase(this)">
+                    <button onclick="logoutAdmin()" class="btn-danger text-xs py-2 px-4">
+                        <i class="fas fa-sign-out-alt"></i><span class="hidden sm:inline">Cerrar sesión</span>
+                    </button>
+                    <button onclick="closeAdminPanel()" class="btn-secondary text-xs py-2 px-4">
+                        <i class="fas fa-eye"></i><span class="hidden sm:inline">Ver sitio</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-6 py-8 w-full">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Proyectos</div>
+                    <div class="font-display font-bold text-3xl text-brand-cyan" id="adminStatProjects">0</div>
+                </div>
+                <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Servicios</div>
+                    <div class="font-display font-bold text-3xl text-brand-magenta" id="adminStatServices">0</div>
+                </div>
+                <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Testimonios</div>
+                    <div class="font-display font-bold text-3xl text-brand-yellow" id="adminStatTestimonials">0</div>
+                </div>
+                <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Mensajes</div>
+                    <div class="font-display font-bold text-3xl text-white" id="adminStatMessages">0</div>
+                </div>
+                <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Estado</div>
+                    <div class="font-display font-bold text-lg text-emerald-400 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span id="adminStatusLabel">Online</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 border-b border-white/5 mb-8 overflow-x-auto">
+                <div class="admin-nav-tab active" onclick="switchDbTab('projects')" data-tab="projects"><i class="fas fa-briefcase mr-2"></i>Proyectos</div>
+                <div class="admin-nav-tab" onclick="switchDbTab('services')" data-tab="services"><i class="fas fa-cogs mr-2"></i>Servicios</div>
+                <div class="admin-nav-tab" onclick="switchDbTab('testimonials')" data-tab="testimonials"><i class="fas fa-comments mr-2"></i>Testimonios</div>
+                <div class="admin-nav-tab" onclick="switchDbTab('messages')" data-tab="messages"><i class="fas fa-envelope mr-2"></i>Mensajes</div>
+                <div class="admin-nav-tab" onclick="switchDbTab('settings')" data-tab="settings"><i class="fas fa-database mr-2"></i>Base de Datos</div>
+            </div>
+
+            <div class="db-panel active" id="dbPanel-projects">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="font-display font-bold text-xl">Gestor de Proyectos</h3>
+                        <p class="text-white/40 text-sm">Administra los proyectos del portafolio</p>
+                    </div>
+                    <button onclick="openProjectForm()" class="btn-primary text-xs py-3 px-5">
+                        <i class="fas fa-plus"></i><span>Nuevo Proyecto</span>
+                    </button>
+                </div>
+                <div id="projectFormContainer" class="hidden mb-6 p-6 rounded-2xl bg-white/5 border border-white/5">
+                    <h4 class="font-display font-bold mb-4" id="formTitle">Nuevo Proyecto</h4>
+                    <form id="projectForm" class="grid md:grid-cols-2 gap-4">
+                        <input type="hidden" id="projectIndex" value="">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Título</label>
+                            <input type="text" id="pTitle" class="admin-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Categoría</label>
+                            <select id="pTag" class="admin-input">
+                                <option value="Branding">Branding</option>
+                                <option value="UI/UX">UI/UX</option>
+                                <option value="Packaging">Packaging</option>
+                                <option value="Publicidad">Publicidad</option>
+                                <option value="Web Design">Web Design</option>
+                                <option value="Motion">Motion</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Imagen (URL)</label>
+                            <input type="url" id="pImage" class="admin-input" placeholder="https://..." required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Descripción corta</label>
+                            <input type="text" id="pDescShort" class="admin-input" placeholder="Máx 80 caracteres" maxlength="80" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Descripción larga</label>
+                            <textarea id="pDescLong" rows="3" class="admin-input" placeholder="Descripción detallada del proyecto..." required></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Tags (separados por coma)</label>
+                            <input type="text" id="pTags" class="admin-input" placeholder="Logo Design, Brandbook, Packaging" required>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3 justify-end">
+                            <button type="button" onclick="closeProjectForm()" class="btn-outline text-xs py-3 px-5">Cancelar</button>
+                            <button type="submit" class="btn-primary text-xs py-3 px-5">
+                                <i class="fas fa-save"></i><span>Guardar en Supabase</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-white/5">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Imagen</th>
+                                <th>Proyecto</th>
+                                <th>Categoría</th>
+                                <th>Tags</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminProjectsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="db-panel" id="dbPanel-services">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="font-display font-bold text-xl">Gestor de Servicios</h3>
+                        <p class="text-white/40 text-sm">Administra los servicios ofrecidos</p>
+                    </div>
+                    <button onclick="openServiceForm()" class="btn-primary text-xs py-3 px-5">
+                        <i class="fas fa-plus"></i><span>Nuevo Servicio</span>
+                    </button>
+                </div>
+                <div id="serviceFormContainer" class="hidden mb-6 p-6 rounded-2xl bg-white/5 border border-white/5">
+                    <h4 class="font-display font-bold mb-4" id="serviceFormTitle">Nuevo Servicio</h4>
+                    <form id="serviceForm" class="grid md:grid-cols-2 gap-4">
+                        <input type="hidden" id="serviceIndex" value="">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Título</label>
+                            <input type="text" id="sTitle" class="admin-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Icono (clase FontAwesome)</label>
+                            <input type="text" id="sIcon" class="admin-input" placeholder="fas fa-fingerprint" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Descripción</label>
+                            <textarea id="sDesc" rows="3" class="admin-input" required></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Tags (separados por coma)</label>
+                            <input type="text" id="sTags" class="admin-input" placeholder="Logo, Brandbook, Naming" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Color</label>
+                            <select id="sColor" class="admin-input">
+                                <option value="cyan">Cyan</option>
+                                <option value="magenta">Magenta</option>
+                                <option value="yellow">Yellow</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3 justify-end">
+                            <button type="button" onclick="closeServiceForm()" class="btn-outline text-xs py-3 px-5">Cancelar</button>
+                            <button type="submit" class="btn-primary text-xs py-3 px-5">
+                                <i class="fas fa-save"></i><span>Guardar en Supabase</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-white/5">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Icono</th>
+                                <th>Servicio</th>
+                                <th>Color</th>
+                                <th>Tags</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminServicesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="db-panel" id="dbPanel-testimonials">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="font-display font-bold text-xl">Gestor de Testimonios</h3>
+                        <p class="text-white/40 text-sm">Administra las reseñas de clientes</p>
+                    </div>
+                    <button onclick="openTestimonialForm()" class="btn-primary text-xs py-3 px-5">
+                        <i class="fas fa-plus"></i><span>Nuevo Testimonio</span>
+                    </button>
+                </div>
+                <div id="testimonialFormContainer" class="hidden mb-6 p-6 rounded-2xl bg-white/5 border border-white/5">
+                    <h4 class="font-display font-bold mb-4" id="testimonialFormTitle">Nuevo Testimonio</h4>
+                    <form id="testimonialForm" class="grid md:grid-cols-2 gap-4">
+                        <input type="hidden" id="testimonialIndex" value="">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Nombre</label>
+                            <input type="text" id="tName" class="admin-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Cargo / Empresa</label>
+                            <input type="text" id="tRole" class="admin-input" placeholder="CEO, Empresa" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Foto (URL)</label>
+                            <input type="url" id="tPhoto" class="admin-input" placeholder="https://..." required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Testimonio</label>
+                            <textarea id="tText" rows="4" class="admin-input" required></textarea>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3 justify-end">
+                            <button type="button" onclick="closeTestimonialForm()" class="btn-outline text-xs py-3 px-5">Cancelar</button>
+                            <button type="submit" class="btn-primary text-xs py-3 px-5">
+                                <i class="fas fa-save"></i><span>Guardar en Supabase</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-white/5">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Foto</th>
+                                <th>Nombre</th>
+                                <th>Cargo</th>
+                                <th>Testimonio</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTestimonialsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="db-panel" id="dbPanel-messages">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="font-display font-bold text-xl">Mensajes Recibidos</h3>
+                        <p class="text-white/40 text-sm">Los mensajes se envían por correo y también se guardan en la tabla <strong>messages</strong> de Supabase.</p>
+                    </div>
+                    <button onclick="clearAllMessages()" class="btn-danger text-xs py-3 px-5">
+                        <i class="fas fa-trash"></i><span>Vaciar Bandeja</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-white/5">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Mensaje</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminMessagesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="db-panel" id="dbPanel-settings">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-display font-bold text-xl mb-4">Base de Datos Supabase</h3>
+                        <p class="text-white/50 mb-6">Esta aplicación utiliza <strong>Supabase</strong>, una base de datos PostgreSQL en la nube. Los datos se comparten entre dispositivos y se administran mediante políticas de seguridad en Supabase.</p>
+
+                        <div class="space-y-4 mb-8">
+                            <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-white/60 text-sm">Motor de Base de Datos</span>
+                                    <span class="text-brand-cyan text-sm font-mono">Supabase PostgreSQL</span>
+                                </div>
+                                <div class="w-full bg-white/5 rounded-full h-2">
+                                    <div class="bg-brand-cyan h-2 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-white/60 text-sm">Tablas</span>
+                                    <span class="text-brand-magenta text-sm font-mono">4 activas</span>
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <span class="px-2 py-1 text-[10px] bg-brand-cyan/10 text-brand-cyan rounded">projects</span>
+                                    <span class="px-2 py-1 text-[10px] bg-brand-magenta/10 text-brand-magenta rounded">services</span>
+                                    <span class="px-2 py-1 text-[10px] bg-brand-yellow/10 text-brand-yellow rounded">testimonials</span>
+                                    <span class="px-2 py-1 text-[10px] bg-white/10 text-white rounded">messages</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-3">
+                            <button onclick="exportDatabase()" class="btn-primary w-full justify-center">
+                                <i class="fas fa-download"></i><span>Exportar Base de Datos (.json)</span>
+                            </button>
+                            <button onclick="document.getElementById('dbImportFile').click()" class="btn-outline w-full justify-center">
+                                <i class="fas fa-upload"></i><span>Importar Base de Datos (.json)</span>
+                            </button>
+                            <button onclick="resetDatabase()" class="btn-danger w-full justify-center">
+                                <i class="fas fa-undo"></i><span>Restaurar Valores de Fábrica</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-display font-bold mb-4">Vista Previa JSON</h4>
+                        <div class="json-preview" id="dbJsonPreview">Cargando...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="preloader">
+        <div class="preloader-text">
+            <span>L</span><span>O</span><span>R</span><span>D</span><span>A</span><span>N</span><span>T</span><span>U</span><span>N</span><span>E</span><span>Z</span>
+        </div>
+        <div class="preloader-bar">
+            <div class="preloader-bar-inner" id="preloaderBar"></div>
+        </div>
+    </div>
+
+    <div class="mobile-menu" id="mobileMenu" role="navigation" aria-label="Menú móvil" aria-hidden="true">
+        <a href="#about" onclick="closeMobileMenu()">Nosotros</a>
+        <a href="#services" onclick="closeMobileMenu()">Servicios</a>
+        <a href="#portfolio" onclick="closeMobileMenu()">Portafolio</a>
+        <a href="#process" onclick="closeMobileMenu()">Proceso</a>
+        <a href="#contact" onclick="closeMobileMenu()">Contacto</a>
+    </div>
+
+    <nav class="navbar" id="navbar">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="#hero" class="flex items-center gap-2 group" aria-label="Ir al inicio">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-magenta flex items-center justify-center">
+                    <span class="font-display font-bold text-brand-black text-lg">L</span>
+                </div>
+                <span class="font-display font-bold text-xl tracking-tight">LORDANTUNEZ</span>
+            </a>
+
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#about" class="nav-link">Nosotros</a>
+                <a href="#services" class="nav-link">Servicios</a>
+                <a href="#portfolio" class="nav-link">Portafolio</a>
+                <a href="#process" class="nav-link">Proceso</a>
+                <a href="#contact" class="btn-primary text-xs py-3 px-6">
+                    <span>Contactar</span><i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button type="button" onclick="openAdminLogin()" class="hidden md:flex items-center justify-center w-10 h-10 rounded-xl border border-white/10 text-white/40 hover:text-brand-cyan hover:border-brand-cyan transition-all" title="Admin" aria-label="Abrir panel de administración">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button type="button" class="md:hidden text-2xl" id="menuBtn" onclick="toggleMobileMenu()" aria-controls="mobileMenu" aria-expanded="false" aria-label="Abrir menú">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content max-w-7xl mx-auto px-6 py-32 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-8 hero-badge">
+                <span class="w-2 h-2 rounded-full bg-brand-cyan animate-pulse"></span>
+                <span class="text-xs font-medium tracking-widest uppercase text-white/70">Agencia Creativa Premium</span>
+            </div>
+            <h1 class="hero-title mb-8">
+                <span class="line"><span>Diseño que</span></span>
+                <span class="line"><span class="gradient-text">transforma</span></span>
+                <span class="line"><span>marcas</span></span>
+            </h1>
+            <p class="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-12 hero-subtitle leading-relaxed">
+                Creamos identidades visuales memorables, experiencias digitales impactantes
+                y estrategias de branding que posicionan tu negocio por encima de la competencia.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 hero-buttons">
+                <a href="#portfolio" class="btn-primary"><span>Ver Proyectos</span><i class="fas fa-arrow-right"></i></a>
+                <a href="#contact" class="btn-outline"><span>Hablemos</span><i class="fas fa-envelope"></i></a>
+            </div>
+            <div class="mt-20 flex items-center justify-center gap-12 text-white/30 text-sm hero-stats">
+                <div class="text-center"><div class="font-display font-bold text-2xl text-white/80" id="heroStatProjects">0</div><div class="text-xs uppercase tracking-wider mt-1">Proyectos</div></div>
+                <div class="w-px h-8 bg-white/10"></div>
+                <div class="text-center"><div class="font-display font-bold text-2xl text-white/80">8+</div><div class="text-xs uppercase tracking-wider mt-1">Años</div></div>
+                <div class="w-px h-8 bg-white/10"></div>
+                <div class="text-center"><div class="font-display font-bold text-2xl text-white/80">40+</div><div class="text-xs uppercase tracking-wider mt-1">Clientes</div></div>
+            </div>
+        </div>
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50">
+            <span class="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
+            <div class="w-px h-8 bg-gradient-to-b from-white/50 to-transparent"></div>
+        </div>
+    </section>
+
+    <div class="py-8 border-y border-white/5 overflow-hidden bg-brand-dark">
+        <div class="marquee-track whitespace-nowrap">
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">BRANDING</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-cyan/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">UI/UX</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-magenta/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">DISEÑO WEB</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-yellow/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">MOTION</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-cyan/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">IDENTIDAD</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-magenta/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">BRANDING</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-cyan/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">UI/UX</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-magenta/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">DISEÑO WEB</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-yellow/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">MOTION</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-cyan/20">•</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-white/5">IDENTIDAD</span>
+            <span class="font-display text-4xl md:text-6xl font-bold text-brand-magenta/20">•</span>
+        </div>
+    </div>
+
+    <section id="about" class="py-24 md:py-32 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-brand-cyan/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="reveal-left">
+                    <div class="section-label">Sobre Nosotros</div>
+                    <h2 class="section-title mb-6">Diseñamos el <span class="gradient-text">futuro visual</span> de tu marca</h2>
+                    <p class="text-white/60 text-lg leading-relaxed mb-6">
+                        En LORDANTUNEZ Studio creemos que el gran diseño no solo se ve bien: <strong class="text-white">funciona</strong>.
+                        Combinamos estrategia, creatividad y tecnología para construir identidades que conectan
+                        emocionalmente con tu audiencia y generan resultados medibles.
+                    </p>
+                    <p class="text-white/60 leading-relaxed mb-8">
+                        Desde startups disruptivas hasta corporaciones establecidas, hemos ayudado a más de
+                        40 marcas a encontrar su voz visual única en un mercado cada vez más competitivo.
+                    </p>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                            <div class="text-brand-cyan font-display font-bold text-2xl mb-1">Estrategia</div>
+                            <div class="text-white/50 text-sm">Pensamiento basado en datos</div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                            <div class="text-brand-magenta font-display font-bold text-2xl mb-1">Arte</div>
+                            <div class="text-white/50 text-sm">Estética sin compromisos</div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                            <div class="text-brand-yellow font-display font-bold text-2xl mb-1">Tecnología</div>
+                            <div class="text-white/50 text-sm">Herramientas de vanguardia</div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                            <div class="text-white font-display font-bold text-2xl mb-1">Pasión</div>
+                            <div class="text-white/50 text-sm">Amor por cada pixel</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="reveal-right relative">
+                    <div class="relative rounded-2xl overflow-hidden aspect-[4/5]">
+                        <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80" alt="Diseño creativo en estudio" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-brand-black/80 via-transparent to-transparent"></div>
+                        <div class="absolute bottom-6 left-6 right-6">
+                            <div class="flex items-center gap-3 mb-3">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="Fundador" class="w-12 h-12 rounded-full object-cover border-2 border-brand-cyan">
+                                <div>
+                                    <div class="font-display font-bold text-white">Owen Antunez</div>
+                                    <div class="text-white/50 text-sm">Director Creativo & Fundador</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute -top-4 -right-4 md:top-8 md:-right-8 p-4 rounded-2xl bg-brand-gray/90 backdrop-blur-xl border border-white/10 glow-cyan">
+                        <div class="font-display font-bold text-3xl text-brand-cyan">8+</div>
+                        <div class="text-white/60 text-xs uppercase tracking-wider">Años de experiencia</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="py-24 md:py-32 relative">
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-brand-magenta/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+                <div class="section-label">Servicios</div>
+                <h2 class="section-title mb-4">Soluciones creativas <span class="gradient-text">a medida</span></h2>
+                <p class="text-white/60">Cada proyecto es único. Adaptamos nuestro enfoque para maximizar el impacto visual y comercial de tu marca.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="servicesGrid"></div>
+        </div>
+    </section>
+
+    <section id="portfolio" class="py-24 md:py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-16 reveal">
+                <div>
+                    <div class="section-label">Portafolio</div>
+                    <h2 class="section-title">Proyectos <span class="gradient-text">seleccionados</span></h2>
+                </div>
+                <p class="text-white/50 max-w-md mt-4 md:mt-0">Una muestra de nuestro trabajo reciente. Cada proyecto cuenta una historia única de transformación visual.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="portfolioGrid"></div>
+        </div>
+    </section>
+
+    <div class="modal" id="portfolioModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modalTitle">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <button type="button" class="modal-close" onclick="closeModal()" aria-label="Cerrar proyecto"><i class="fas fa-times"></i></button>
+            <div class="max-h-[90vh] overflow-y-auto">
+                <img id="modalImage" src="" alt="" class="w-full aspect-video object-cover">
+                <div class="p-8">
+                    <span id="modalTag" class="inline-block px-3 py-1 text-[10px] uppercase tracking-wider bg-brand-cyan/10 text-brand-cyan rounded-full mb-4"></span>
+                    <h3 id="modalTitle" class="font-display font-bold text-3xl mb-4"></h3>
+                    <p id="modalDesc" class="text-white/60 leading-relaxed mb-6"></p>
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 rounded-xl bg-white/5 text-center"><div class="font-display font-bold text-brand-cyan text-xl">3</div><div class="text-white/40 text-xs mt-1">Semanas</div></div>
+                        <div class="p-4 rounded-xl bg-white/5 text-center"><div class="font-display font-bold text-brand-magenta text-xl">12</div><div class="text-white/40 text-xs mt-1">Entregables</div></div>
+                        <div class="p-4 rounded-xl bg-white/5 text-center"><div class="font-display font-bold text-brand-yellow text-xl">100%</div><div class="text-white/40 text-xs mt-1">Satisfacción</div></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2" id="modalTags"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section id="testimonials" class="py-24 md:py-32 relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-cyan/3 rounded-full blur-3xl"></div>
+        <div class="max-w-7xl mx-auto px-6 relative">
+            <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+                <div class="section-label">Testimonios</div>
+                <h2 class="section-title mb-4">Lo que dicen <span class="gradient-text">nuestros clientes</span></h2>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6" id="testimonialsGrid"></div>
+        </div>
+    </section>
+
+    <section id="process" class="py-24 md:py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-start">
+                <div class="lg:sticky lg:top-32 reveal-left">
+                    <div class="section-label">Proceso</div>
+                    <h2 class="section-title mb-6">Cómo <span class="gradient-text">trabajamos</span></h2>
+                    <p class="text-white/60 text-lg leading-relaxed mb-8">Un proceso estructurado pero flexible que garantiza resultados excepcionales en cada etapa del proyecto.</p>
+                    <a href="#contact" class="btn-primary"><span>Iniciar Proyecto</span><i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="space-y-12">
+                    <div class="process-step reveal-right">
+                        <div class="process-step-number">01</div>
+                        <h3 class="font-display font-bold text-2xl mb-3">Descubrimiento & Briefing</h3>
+                        <p class="text-white/50 leading-relaxed">Comenzamos con una inmersión profunda en tu negocio, audiencia y objetivos. Investigamos la competencia, definimos el tono de voz y establecemos KPIs claros para medir el éxito del proyecto.</p>
+                    </div>
+                    <div class="process-step reveal-right">
+                        <div class="process-step-number">02</div>
+                        <h3 class="font-display font-bold text-2xl mb-3">Estrategia & Concepto</h3>
+                        <p class="text-white/50 leading-relaxed">Desarrollamos la dirección creativa: moodboards, propuestas de concepto y arquitectura de información. Aquí definimos la esencia visual que guiará todo el proyecto.</p>
+                    </div>
+                    <div class="process-step reveal-right">
+                        <div class="process-step-number">03</div>
+                        <h3 class="font-display font-bold text-2xl mb-3">Diseño & Iteración</h3>
+                        <p class="text-white/50 leading-relaxed">Creamos los diseños finales con atención obsesiva al detalle. Presentamos iteraciones basadas en tu feedback hasta alcanzar la perfección. Cada pixel cuenta.</p>
+                    </div>
+                    <div class="process-step reveal-right">
+                        <div class="process-step-number">04</div>
+                        <h3 class="font-display font-bold text-2xl mb-3">Entrega & Soporte</h3>
+                        <p class="text-white/50 leading-relaxed">Entregamos todos los archivos en formatos optimizados para cada uso. Incluimos guías de marca, assets y soporte post-entrega para asegurar una implementación impecable.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="cta-section py-24 md:py-32 relative">
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+            <div class="reveal">
+                <div class="section-label">¿Listo para empezar?</div>
+                <h2 class="section-title mb-6">Transformemos tu marca <span class="gradient-text">juntos</span></h2>
+                <p class="text-white/60 text-lg max-w-2xl mx-auto mb-10">Cada gran marca comienza con una conversación. Cuéntanos sobre tu proyecto y te ayudaremos a dar el siguiente paso hacia una identidad visual excepcional.</p>
+
+                <form id="contactForm" name="contact" method="POST" action="https://formsubmit.co/lordantunez12@gmail.com" class="max-w-xl mx-auto mb-12 text-left">
+                    <input type="hidden" id="contactDate" name="date" value="">
+                    <input type="hidden" name="_subject" value="Nuevo mensaje desde Lord Antunez Studio">
+                    <input type="hidden" name="_template" value="table">
+                    <input type="hidden" name="_captcha" value="false">
+                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Nombre</label>
+                            <input type="text" id="contactName" name="name" class="admin-input" autocomplete="name" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Email</label>
+                            <input type="email" id="contactEmail" name="email" class="admin-input" autocomplete="email" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs uppercase tracking-wider text-white/40 mb-2">Mensaje</label>
+                        <textarea id="contactMessage" name="message" rows="4" class="admin-input" placeholder="Cuéntanos sobre tu proyecto..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary w-full justify-center">
+                        <span>Enviar Mensaje</span><i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-8 text-white/40 text-sm">
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-brand-cyan"></i><span>Respuesta en 24h</span></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-brand-cyan"></i><span>Consulta inicial gratuita</span></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-brand-cyan"></i><span>Presupuesto sin compromiso</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="border-t border-white/5 py-16">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-12 mb-12">
+                <div class="md:col-span-2">
+                    <a href="#hero" class="flex items-center gap-2 mb-4" aria-label="Ir al inicio">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-magenta flex items-center justify-center">
+                            <span class="font-display font-bold text-brand-black text-lg">L</span>
+                        </div>
+                        <span class="font-display font-bold text-xl tracking-tight">LORDANTUNEZ Studio</span>
+                    </a>
+                    <p class="text-white/40 max-w-sm leading-relaxed mb-6">Agencia creativa especializada en branding, diseño UI/UX y experiencias visuales que conectan marcas con personas.</p>
+                    <div class="flex gap-3">
+                        <a href="#contact" class="social-icon" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#contact" class="social-icon" aria-label="Dribbble"><i class="fab fa-dribbble"></i></a>
+                        <a href="#contact" class="social-icon" aria-label="Behance"><i class="fab fa-behance"></i></a>
+                        <a href="#contact" class="social-icon" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-display font-bold text-white mb-4">Navegación</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#about" class="footer-link text-sm">Nosotros</a></li>
+                        <li><a href="#services" class="footer-link text-sm">Servicios</a></li>
+                        <li><a href="#portfolio" class="footer-link text-sm">Portafolio</a></li>
+                        <li><a href="#process" class="footer-link text-sm">Proceso</a></li>
+                        <li><a href="#contact" class="footer-link text-sm">Contacto</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-display font-bold text-white mb-4">Contacto</h4>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-2 text-white/40 text-sm"><i class="fas fa-envelope text-brand-cyan"></i>lordantunez@gmail.com</li>
+                        <li class="flex items-center gap-2 text-white/40 text-sm"><i class="fas fa-phone text-brand-cyan"></i>+504 9211-1718</li>
+                        <li class="flex items-center gap-2 text-white/40 text-sm"><i class="fas fa-map-marker-alt text-brand-cyan"></i>La Ceiba, Honduras</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-white/30 text-sm">© 2026 LORDANTUNEZ Studio. Todos los derechos reservados.</p>
+                <div class="flex items-center gap-6">
+                    <button type="button" onclick="openAdminLogin()" class="text-white/30 text-sm hover:text-brand-cyan transition-colors flex items-center gap-2">
+                        <i class="fas fa-lock text-[10px]"></i> Admin
+                    </button>
+                    <a href="#" class="text-white/30 text-sm hover:text-white/60 transition-colors">Privacidad</a>
+                    <a href="#" class="text-white/30 text-sm hover:text-white/60 transition-colors">Términos</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="database.js"></script>
+    <script src="admin.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
